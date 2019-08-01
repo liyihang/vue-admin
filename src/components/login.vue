@@ -2,7 +2,7 @@
   <div class="login-container">
     <div class="login-row">
       <div class="login-logo">
-        <img src="../assets/log.png" alt />
+        <img src="../assets/logo.png" alt />
       </div>
       <!-- form -->
       <el-form
