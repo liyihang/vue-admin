@@ -49,7 +49,9 @@
         </el-menu>
       </el-aside>
       <!-- main -->
-      <el-main class="home-main">Main</el-main>
+      <el-main class="home-main">
+        <router-view></router-view>
+      </el-main>
     </el-container>
   </el-container>
 </template>
