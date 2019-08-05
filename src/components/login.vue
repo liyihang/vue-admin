@@ -74,6 +74,7 @@ export default {
         this.$message.success('登录成功')
         // store the token in sessionStorage
         window.sessionStorage.setItem('token', res.data.token)
+        console.log(res)
         // to home page
         this.$router.push('/home')
       })
