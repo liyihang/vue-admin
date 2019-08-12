@@ -238,7 +238,7 @@ export default {
     },
     // user delete
     async userDel (id) {
-      const confirmRes = await this.$confirm('此是否删除该用户, 是否继续?', '提示', {
+      const confirmRes = await this.$confirm('是否删除该用户, 是否继续?', '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning'
