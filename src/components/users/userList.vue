@@ -43,11 +43,23 @@
           </template>
         </el-table-column>
         <el-table-column label="操作" width="200px">
-          <el-button type="primary" icon="el-icon-edit" size="mini"></el-button>
-          <el-button type="danger" icon="el-icon-delete" size="mini"></el-button>
-          <el-tooltip effect="dark" content="分配权限" placement="top" :enterable="false">
-            <el-button type="warning" icon="el-icon-setting" size="mini"></el-button>
-          </el-tooltip>
+          <template slot-scope="scope">
+            <el-button
+              type="primary"
+              icon="el-icon-edit"
+              size="mini"
+              @click="userEdit(scope.row.id)"
+            ></el-button>
+            <el-button
+              type="danger"
+              icon="el-icon-delete"
+              size="mini"
+              @click="userDel(scope.row.id)"
+            ></el-button>
+            <el-tooltip effect="dark" content="分配权限" placement="top" :enterable="false">
+              <el-button type="warning" icon="el-icon-setting" size="mini"></el-button>
+            </el-tooltip>
+          </template>
         </el-table-column>
       </el-table>
       <!-- pagination -->
@@ -89,6 +101,31 @@
         <el-button type="primary" @click="addUser">确 定</el-button>
       </span>
     </el-dialog>
+    <!-- user edit dialog -->
+    <el-dialog title="用户编辑" :visible.sync="EditUserDialogVisible" width="30%">
+      <!-- userEdit form -->
+      <el-form
+        :model="EditForm"
+        :rules="editRules"
+        ref="editUserRef"
+        label-width="100px"
+        class="demo-ruleForm"
+      >
+        <el-form-item label="用户名" prop="username">
+          <el-input v-model="EditForm.username" :disabled="true"></el-input>
+        </el-form-item>
+        <el-form-item label="邮箱" prop="email">
+          <el-input v-model="EditForm.email"></el-input>
+        </el-form-item>
+        <el-form-item label="手机" prop="mobile">
+          <el-input v-model="EditForm.mobile"></el-input>
+        </el-form-item>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="EditUserDialogVisible = false">取 消</el-button>
+        <el-button type="primary" @click="saveUserInfo">确 定</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
@@ -108,6 +145,21 @@ export default {
     }
 
     return {
+      // edit form rules
+      editRules: {
+        email: [
+          { validator: checkMail, trigger: 'blur' },
+          { required: true, message: '请输入邮箱', trigger: 'blur' }],
+        mobile: [{ required: true, message: '请输入手机号码', trigger: 'blur' }]
+      },
+      // edit form
+      EditForm: {
+        username: '',
+        email: '',
+        mobile: ''
+      },
+      // edit dialog form
+      EditUserDialogVisible: false,
       // dialog  form
       addDialogVisible: false,
       userList: [],
@@ -151,7 +203,7 @@ export default {
       }
       this.userList = res.data.users
       this.total = res.data.total
-      console.log(res)
+      // console.log(res)
     },
     // handle pagesize change
     handleSizeChange (newSize) {
@@ -183,11 +235,61 @@ export default {
         this.addDialogVisible = false
         this.getUserList()
       })
+    },
+    // user delete
+    async userDel (id) {
+      const confirmRes = await this.$confirm('此是否删除该用户, 是否继续?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).catch(error => error)
+      if (confirmRes !== 'confirm') {
+        return this.$message({
+          type: 'info',
+          message: '已取消删除'
+        })
+      }
+      const { data: res } = await this.$http.delete('users/' + id)
+      if (res.meta.status !== 200) {
+        return this.$message({
+          type: 'danger',
+          message: '删除失败'
+        })
+      }
+      this.$message({
+        type: 'success',
+        message: '删除成功'
+      })
+      this.getUserList()
+    },
+    // user eidt
+    async userEdit (id) {
+      // get Data before edit
+      const { data: res } = await this.$http.get('users/' + id)
+      if (res.meta.status !== 200) {
+        return this.$message.error('获取用户信息失败！')
+      }
+      this.EditForm = res.data
+      this.EditUserDialogVisible = true
+    },
+    // sava user infomation
+    saveUserInfo () {
+      this.$refs.editUserRef.validate(async valid => {
+        if (!valid) {
+          return
+        }
+        const { data: res } = await this.$http.put('users/' + this.EditForm.id, this.EditForm)
+        if (res.meta.status !== 200) {
+          return this.$message.error('更新用户信息失败！')
+        }
+        this.$message.success('更新用户信息成功！')
+        this.getUserList()
+        this.EditUserDialogVisible = false
+
+      })
     }
   }
 }
-
 </script>
-
 <style lang="less" scoped>
 </style>
