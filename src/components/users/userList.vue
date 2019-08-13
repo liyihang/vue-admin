@@ -57,7 +57,12 @@
               @click="userDel(scope.row.id)"
             ></el-button>
             <el-tooltip effect="dark" content="分配权限" placement="top" :enterable="false">
-              <el-button type="warning" icon="el-icon-setting" size="mini"></el-button>
+              <el-button
+                type="warning"
+                icon="el-icon-setting"
+                size="mini"
+                @click="showRolesAssignDialog(scope.row)"
+              ></el-button>
             </el-tooltip>
           </template>
         </el-table-column>
@@ -126,6 +131,26 @@
         <el-button type="primary" @click="saveUserInfo">确 定</el-button>
       </span>
     </el-dialog>
+    <!-- privilege  assignment dialog-->
+    <el-dialog title="分配角色" :visible.sync="RolesAssignDialogVisible" width="40%">
+      <p>当前用户名：{{RolesInfo.username}}</p>
+      <p>当前角色：{{RolesInfo.role_name}}</p>
+      <p>
+        分配新角色：
+        <el-select v-model="newRoleId" placeholder="请选择">
+          <el-option
+            v-for="item in RolesList"
+            :key="item.id"
+            :label="item.roleName"
+            :value="item.id"
+          ></el-option>
+        </el-select>
+      </p>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="RolesAssignDialogVisible = false">取 消</el-button>
+        <el-button type="primary" @click="saveRoleAssignInfo">确 定</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
@@ -145,6 +170,14 @@ export default {
     }
 
     return {
+      // roles assignment private
+      RolesAssignDialogVisible: false,
+      // user info
+      RolesInfo: {},
+      // all roles list
+      RolesList: [],
+      // assign new role id
+      newRoleId: '',
       // edit form rules
       editRules: {
         email: [
@@ -285,8 +318,31 @@ export default {
         this.$message.success('更新用户信息成功！')
         this.getUserList()
         this.EditUserDialogVisible = false
-
       })
+    },
+    // show roles assignment dialog
+    async showRolesAssignDialog (roleInfo) {
+      this.RolesAssignDialogVisible = true
+      this.RolesInfo = roleInfo
+      const {data:res} = await this.$http.get('roles')
+      if(res.meta.status !==200){
+        return this.$message.error('获取角色类别失败！')
+      }
+      this.RolesList = res.data
+      console.log(this.RolesInfo);
+    },
+    // save Role Assign Info
+    async saveRoleAssignInfo () {
+      if(!this.newRoleId){
+        return this.$message.warning('请选择新角色！')
+      }
+      const {data:res}=await this.$http.put('users/'+this.RolesInfo.id+'/role',{rid:this.newRoleId})
+      if(res.meta.status!==200){
+        return this.$message.error('分配角色失败！')
+      }
+      this.$message.success('分配角色成功！')
+      this.RolesAssignDialogVisible = false
+      this.getUserList()
     }
   }
 }

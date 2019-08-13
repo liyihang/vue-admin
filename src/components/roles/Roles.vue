@@ -79,7 +79,6 @@
 </template>
 
 <script>
-import { async } from 'q';
 export default {
   data () {
     return {
@@ -91,10 +90,10 @@ export default {
       },
       editRolesrules: {
         roleName: [
-          { required: true, message: '请输入角色名称', trigger: 'blur' },
+          { required: true, message: '请输入角色名称', trigger: 'blur' }
         ],
         roleDesc: [
-          { required: true, message: '请输入角色描述', trigger: 'blur' },
+          { required: true, message: '请输入角色描述', trigger: 'blur' }
         ]
 
       },
@@ -110,10 +109,10 @@ export default {
       // validate rules
       Rolesrules: {
         roleName: [
-          { required: true, message: '请输入角色名称', trigger: 'blur' },
+          { required: true, message: '请输入角色名称', trigger: 'blur' }
         ],
         roleDesc: [
-          { required: true, message: '请输入角色描述', trigger: 'blur' },
+          { required: true, message: '请输入角色描述', trigger: 'blur' }
         ]
       }
     }
@@ -156,19 +155,39 @@ export default {
       this.editolesdialogVisible = true
       const { data: res } = await this.$http.get('roles/' + id)
       this.editRolesForm = res.data
-},
+    },
     // save roles infomation
     saveRoles () {
       this.$refs.editRolesFormRef.validate(async valid => {
         if (!valid) return
-        const { data: res } = await this.$http.put('roles/'+this.editRolesForm.roleId,this.editRolesForm)
-        if(res.meta.status!==200){
-            return this.$message.error('修改失败')
+        const { data: res } = await this.$http.put('roles/' + this.editRolesForm.roleId, this.editRolesForm)
+        if (res.meta.status !== 200) {
+          return this.$message.error('修改失败')
         }
         this.$message.success('修改成功！')
-      this.AddRolesdialogVisible =false
-
-})
+        this.getRolesList()
+        this.editolesdialogVisible = false
+      })
+    },
+    // remove roles
+    async removeRole (id) {
+      const confirmRes = await this.$confirm('确认删除角色？', '提示', {
+        confirmButtonText: 'confirm',
+        cancelButtonText: 'cancel',
+        type: 'warning'
+      }).catch((err) => { return err })
+      if (confirmRes !== 'confirm') {
+        return this.$message({
+          type: 'warning',
+          message: '取消删除'
+        })
+      }
+      const { data: res } = await this.$http.delete('roles/' + id)
+      if (res.meta.status !== 200) {
+        return this.$message.error('删除失败！')
+      }
+      this.$message.success('删除成功！')
+      this.getRolesList()
     }
   },
 }
