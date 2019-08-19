@@ -9,6 +9,40 @@
     <el-card>
       <el-button type="primary" @click="showRolesDialog">添加角色</el-button>
       <el-table :data="rolesList" border stripe>
+        <el-table-column type="expand">
+          <template slot-scope="scope">
+            <!-- 循环一级权限 -->
+            <el-row
+              v-for="item in scope.row.children"
+              :key="item.id"
+              style="border-bottom: 1px solid lightblue"
+            >
+              <el-col :span="5">
+                <el-tag closable @close="removeRight(scope.row,item.id)">{{item.authName}}</el-tag>
+              </el-col>
+              <el-col :span="19">
+                <el-row v-for="itemSon in item.children" :key="itemSon.id">
+                  <el-col :span="5">
+                    <el-tag
+                      @close="removeRight(scope.row,itemSon.id)"
+                      type="success"
+                      closable
+                    >{{itemSon.authName}}</el-tag>
+                  </el-col>
+                  <el-col :span="19">
+                    <el-tag
+                      type="info"
+                      v-for="itemgrandson in itemSon.children"
+                      :key="itemgrandson.id"
+                      closable
+                      @close="removeRight(scope.row,itemgrandson.id)"
+                    >{{itemgrandson.authName}}</el-tag>
+                  </el-col>
+                </el-row>
+              </el-col>
+            </el-row>
+          </template>
+        </el-table-column>
         <el-table-column type="index"></el-table-column>
         <el-table-column label="角色名称" prop="roleName"></el-table-column>
         <el-table-column label="角色描述" prop="roleDesc"></el-table-column>
@@ -26,8 +60,13 @@
               size="mini"
               @click="removeRole(scope.row.id)"
             ></el-button>
-            <el-tooltip effect="light" content="设置角色" placement="top">
-              <el-button type="warning" icon="el-icon-setting" size="mini"></el-button>
+            <el-tooltip effect="light" content="设置角色权限" placement="top">
+              <el-button
+                type="warning"
+                icon="el-icon-setting"
+                size="mini"
+                @click="getPrivateList(scope.row)"
+              ></el-button>
             </el-tooltip>
           </template>
         </el-table-column>
@@ -75,6 +114,22 @@
         <el-button type="primary" @click="saveRoles">确 定</el-button>
       </span>
     </el-dialog>
+    <!-- assign role privilige dialog -->
+    <el-dialog title="提示" :visible.sync="privateDialogVisible" width="40%">
+      <el-tree
+        ref="tree"
+        :data="privateTree"
+        :props="priData"
+        show-checkbox
+        default-expand-all
+        node-key="id"
+        :default-checked-keys="defaultCheckedItem"
+      ></el-tree>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="privateDialogVisible = false">取 消</el-button>
+        <el-button type="primary" @click="saveRight">确 定</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
@@ -82,6 +137,15 @@
 export default {
   data () {
     return {
+      // role privilege assign data
+      privateDialogVisible: false,
+      privateTree: [],
+      priData: {
+        label: 'authName',
+        children: 'children'
+      },
+      defaultCheckedItem: [],
+      roleId: '',
       // edit
       editolesdialogVisible: false,
       editRolesForm: {
@@ -188,10 +252,70 @@ export default {
       }
       this.$message.success('删除成功！')
       this.getRolesList()
+    },
+    // remove right
+    async removeRight (role, id) {
+      const confirmRes = await this.$confirm('确认删除该权限？, 是否继续?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).catch(err => err)
+      if (confirmRes !== 'confirm') {
+        return this.$message.error('已经取消删除')
+      }
+      const { data: res } = await this.$http.delete(`roles/${role.id}/rights/${id}`)
+      console.log(res)
+
+      if (res.meta.status !== 200) {
+        return this.$message.error('获取数据失败')
+      }
+      this.$message.success('删除成功！')
+      role.children = res.data
+    },
+    async getPrivateList (role) {
+      this.roleId = role.id
+      const { data: res } = await this.$http.get('rights/tree')
+      if (res.meta.status !== 200) {
+        return this.$message.error('获取所有权限失败')
+      }
+      this.privateTree = res.data
+      // console.log(res)
+      const keys = []
+      // console.log(role)
+      this.getLeafId(role, keys)
+      this.defaultCheckedItem = keys
+      console.log(this.defaultCheckedItem);
+      this.privateDialogVisible = true
+
+    },
+    //recursive to get all three leave id
+    getLeafId (node, keyArr) {
+      if (!node.children) {
+        return keyArr.push(node.id)
+      }
+      node.children.forEach(item => this.getLeafId(item, keyArr))
+    },
+    // save rights
+    async saveRight () {
+      // get full checked checkbox
+      const full = this.$refs.tree.getCheckedKeys()
+      // get half checked checkbox
+      const half = this.$refs.tree.getHalfCheckedKeys()
+      // join two arrays
+      const ids = [...full, ...half].join(',')
+      const { data: res } = await this.$http.post(`roles/${this.roleId}/rights`, { rids: ids })
+      if (res.meta.status !== 200) {
+        return this.$message.error('分配权限失败')
+      }
+      this.$message.success('分配权限成功！')
+      this.privateDialogVisible = false
     }
-  },
+  }
 }
 </script>
 
-<style lang="less" scoped>
+<style scoped>
+.el-tag {
+  margin: 5px;
+}
 </style>
