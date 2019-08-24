@@ -309,6 +309,7 @@ export default {
       }
       this.$message.success('分配权限成功！')
       this.privateDialogVisible = false
+      this.getRolesList()
     }
   }
 }
