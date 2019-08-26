@@ -5,7 +5,8 @@ import store from './store'
 import ElementUI from 'element-ui'
 import axios from 'axios'
 import './assets/css/all.css'
-
+import TreeTable from 'vue-table-with-tree-grid'
+Vue.component('tree-table', TreeTable)
 Vue.config.productionTip = false
 Vue.use(ElementUI)
 Vue.prototype.$http = axios
