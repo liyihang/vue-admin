@@ -32,7 +32,7 @@
           <el-button type="primary" size="mini" @click="showEditDialog(scope.row.cat_id)">
             <i class="el-icon-edit"></i>
           </el-button>
-          <el-button type="danger" size="mini">
+          <el-button type="danger" size="mini" @click="remove(scope.row.cat_id)">
             <i class="el-icon-delete"></i>
           </el-button>
         </template>
@@ -69,20 +69,22 @@
       </span>
     </el-dialog>
     <!-- edit dialog -->
-    <el-dialog title="编辑对话框" :visible.sync="editdialogVisible" width="50%">
+    <el-dialog title="编辑分类" :visible.sync="editdialogVisible" width="50%" @close="closeEditDialog">
       <el-form :model="editRuleForm" :rules="editRules" ref="editFormRef" label-width="100px">
         <el-form-item label="分类名称" prop="cat_name">
-          <el-input v-model="ruleForm.cat_name"></el-input>
+          <el-input v-model="editRuleForm.cat_name"></el-input>
         </el-form-item>
       </el-form>
       <span slot="footer" class="dialog-footer">
         <el-button @click="editdialogVisible = false">取 消</el-button>
-        <el-button type="primary" @click="editdialogVisible = false">确 定</el-button>
+        <el-button type="primary" @click="saveCategory">确 定</el-button>
       </span>
     </el-dialog>
   </div>
 </template>
 <script>
+import { async } from 'q';
+import { log } from 'util';
 export default {
   data () {
     return {
@@ -143,7 +145,9 @@ export default {
       selectedCate: [],
       // edit category
       editdialogVisible: false,
-      editRuleForm:{},
+      editRuleForm: {
+        cat_name: ''
+      },
       editRules: {
         cat_name: [{ required: true, message: '请输入分类名称', trigger: 'blur' }]
       }
@@ -210,8 +214,49 @@ export default {
         this.getCateList()
       })
     },
-    showEditDialog (id) {
+    async showEditDialog (id) {
+      const { data: res } = await this.$http.get('categories/' + id)
+      if (res.meta.status !== 200) {
+        return this.$message.error('获取数据失败！')
+      }
+      this.editRuleForm = res.data
       this.editdialogVisible = true
+    },
+    // close dialog
+    closeEditDialog () {
+      this.closeEditDialog = false
+    },
+    // save category
+    saveCategory () {
+      this.$refs.editFormRef.validate(async valid => {
+        if (!valid) return
+        const { data: res } = await this.$http.put('categories/' + this.editRuleForm.cat_id, { cat_name: this.editRuleForm.cat_name })
+        if (res.meta.status !== 200) {
+          return this.$message.error('更新失败')
+        }
+        this.$message.success('更新成功')
+        this.editdialogVisible = false
+        this.getCateList()
+      })
+    },
+    async remove (id) {
+      const confirmRes = await this.$confirm('是否删除该分类, 是否继续?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).catch(err => err)
+      if (confirmRes !== 'confirm') {
+        return this.$message({
+          type: 'info',
+          message: '已取消删除'
+        })
+      }
+      const {data:res} = await this.$http.delete('categories/'+id)
+      if(res.meta.status !== 200){
+        return this.$message.error('删除失败')
+      }
+      this.$message.success('删除成功')
+      this.getCateList()
     }
   }
 }
