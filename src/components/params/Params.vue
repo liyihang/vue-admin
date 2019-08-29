@@ -35,7 +35,28 @@
             @click="addDialogVisible=true"
           >添加参数</el-button>
           <el-table :data="manyData" border stripe>
-            <el-table-column type="expand"></el-table-column>
+            <el-table-column type="expand">
+              <!-- expand column -->
+              <template slot-scope="scope">
+                <el-tag
+                  :key="tag"
+                  v-for="(tag,i) in scope.row.attr_vals"
+                  closable
+                  :disable-transitions="false"
+                  @close="handleClose(scope.row,i)"
+                >{{tag}}</el-tag>
+                <el-input
+                  class="input-new-tag"
+                  v-if="inputVisible"
+                  v-model="inputValue"
+                  ref="saveTagInput"
+                  size="small"
+                  @keyup.enter.native="handleInputConfirm(scope.row)"
+                  @blur="handleInputConfirm(scope.row)"
+                ></el-input>
+                <el-button v-else class="button-new-tag" size="small" @click="showInput">+ New Tag</el-button>
+              </template>
+            </el-table-column>
             <el-table-column type="index"></el-table-column>
             <el-table-column label="参数名称" prop="attr_name"></el-table-column>
             <el-table-column label="操作">
@@ -58,7 +79,28 @@
             @click="addDialogVisible=true"
           >添加属性</el-button>
           <el-table :data="onlyData" border stripe>
-            <el-table-column type="expand"></el-table-column>
+            <el-table-column type="expand">
+              <!-- expand column -->
+              <template slot-scope="scope">
+                <el-tag
+                  :key="tag"
+                  v-for="(tag,i) in scope.row.attr_vals"
+                  closable
+                  :disable-transitions="false"
+                  @close="handleClose(scope.row,i)"
+                >{{tag}}</el-tag>
+                <el-input
+                  class="input-new-tag"
+                  v-if="inputVisible"
+                  v-model="inputValue"
+                  ref="saveTagInput"
+                  size="small"
+                  @keyup.enter.native="handleInputConfirm(scope.row)"
+                  @blur="handleInputConfirm(scope.row)"
+                ></el-input>
+                <el-button v-else class="button-new-tag" size="small" @click="showInput">+ New Tag</el-button>
+              </template>
+            </el-table-column>
             <el-table-column type="index"></el-table-column>
             <el-table-column label="参数名称" prop="attr_name"></el-table-column>
             <el-table-column label="操作">
@@ -157,7 +199,11 @@ export default {
       },
       editRules: {
         attr_name: [{ required: true, message: '请添加参数名称', triggle: 'blur' }]
-      }
+      },
+      // expand column tags input show or not
+      inputVisible: '',
+      // input value
+      inputValue: ''
     }
   },
   created () {
@@ -186,6 +232,10 @@ export default {
       if (res.meta.status !== 200) {
         this.$message.error('获取数据失败')
       }
+      res.data.forEach(item => {
+        const arr = item.attr_vals.split(' ')
+        item.attr_vals = arr
+      });
       if (this.activeName === 'many') {
         this.manyData = res.data
       } else {
@@ -253,12 +303,47 @@ export default {
       if (confirmRes !== 'confirm') {
         return this.$message.warning('已取消删除！')
       }
-      const {data:res} = await this.$http.delete(`categories/${this.cateId}/attributes/${id}`)
-      if(res.meta.status !==200){
+      const { data: res } = await this.$http.delete(`categories/${this.cateId}/attributes/${id}`)
+      if (res.meta.status !== 200) {
         this.$message.error('删除失败')
       }
       this.$message.success('删除成功')
       this.getAttributes()
+    },
+    async handleInputConfirm (row) {
+      // if the empty data return
+      if (this.inputValue.trim().length === 0) return
+      // push new tag to row
+      if (this.inputValue.trim().length > 0) {
+        row.attr_vals.push(this.inputValue.trim())
+        // input hidden and clean the value
+        this.inputValue = ''
+      }
+      this.inputVisible = false
+      const { data: res } = await this.$http.put(`categories/${row.cat_id}/attributes/${row.attr_id}`, {
+        attr_name: row.attr_name,
+        attr_sel: row.attr_sel,
+        attr_vals: row.attr_vals.join(' ')
+      })
+      if (res.meta.status !== 200) {
+        return this.$message.error('添加标签失败！')
+      }
+    },
+    // show input
+    showInput () {
+      this.inputVisible = true
+      this.$nextTick(_ => {
+        this.$refs.saveTagInput.$refs.input.focus()
+      })
+    },
+    async handleClose (tag, i) {
+      console.log(tag)
+      tag.attr_vals.splice(i, 1)
+      const { data: res } = await this.$http.delete(`categories/${tag.cat_id}/attributes/${tag.attr_id}`)
+      if (res.meta.status !== 200) {
+        return this.$message.error("删除标签失败")
+      }
+      this.$message.success('删除成功')
     }
   },
   computed: {
@@ -283,5 +368,11 @@ export default {
 <style scoped>
 .el-alert {
   margin-bottom: 15px;
+}
+.el-tag {
+  margin: 10px 5px;
+}
+.input-new-tag {
+  width: 100px;
 }
 </style>
