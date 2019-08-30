@@ -8,6 +8,7 @@ import Rights from './components/rights/Rights.vue'
 import Roles from './components/roles/Roles.vue'
 import Cate from './components/goods/cate.vue'
 import Params from './components/params/Params.vue'
+import OrderList from './components/orderList/OrderList.vue'
 
 Vue.use(Router)
 
@@ -52,6 +53,10 @@ const router = new Router({
         {
           path: '/params',
           component: Params
+        },
+        {
+          path: '/orders',
+          component: OrderList
         }
       ]
     }

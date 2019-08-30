@@ -341,7 +341,7 @@ export default {
       tag.attr_vals.splice(i, 1)
       const { data: res } = await this.$http.delete(`categories/${tag.cat_id}/attributes/${tag.attr_id}`)
       if (res.meta.status !== 200) {
-        return this.$message.error("删除标签失败")
+        return this.$message.error('删除标签失败')
       }
       this.$message.success('删除成功')
     }
