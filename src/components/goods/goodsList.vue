@@ -1,0 +1,74 @@
+<template>
+  <div>
+    <!-- breadcrumb -->
+    <el-breadcrumb separator-class="el-icon-arrow-right">
+      <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
+      <el-breadcrumb-item>商品管理</el-breadcrumb-item>
+      <el-breadcrumb-item>商品列表</el-breadcrumb-item>
+    </el-breadcrumb>
+    <!-- main area -->
+    <el-card>
+      <el-row :gutter="20">
+        <el-col :span="8">
+          <el-input placeholder="请输入内容">
+            <el-button slot="append" icon="el-icon-search"></el-button>
+          </el-input>
+        </el-col>
+        <el-col :span="4">
+          <el-button type="primary">添加商品</el-button>
+        </el-col>
+      </el-row>
+      <!-- goods list -->
+      <el-table :data="goodsList" border stripe >
+        <el-table-column type="index"></el-table-column>
+        <el-table-column label="商品名称" prop="goods_name"></el-table-column>
+        <el-table-column label="商品价格" prop="goods_price"></el-table-column>
+        <el-table-column label="商品重量" prop="goods_weight"></el-table-column>
+        <el-table-column label="创建时间" prop="add_time">
+            <template slot-scope="scope">
+                {{scope.row.add_time|dateFormat}}
+            </template>
+        </el-table-column>
+        <el-table-column>
+            <template slot-scope="scope">
+                  <el-button type="primary" size="mini"><i class="el-icon-edit"></i></el-button>  
+                  <el-button type="danger" size="mini"><i class="el-icon-delete"></i></el-button>  
+            </template>
+        </el-table-column>
+      </el-table>
+    </el-card>
+  </div>
+</template>
+
+<script>
+export default {
+  data () {
+    return {
+      goodsList: [],
+      queryInfo: {
+        query: '',
+        pagenum: 1,
+        pagesize: 10
+      },
+      total: 0
+    }
+  },
+  created() {
+      this.getGoodsList()
+  },
+  methods: {
+    //   get GoodsList
+    async getGoodsList () {
+      const { data: res } = await this.$http.get('goods', { params: this.queryInfo })
+      if (res.meta.status !== 200) {
+        return this.$message.error('获取数据失败')
+      }
+      this.goodsList = res.data.goods
+      this.total = res.data.total
+    }
+  },
+}
+</script>
+
+<style scoped>
+</style>

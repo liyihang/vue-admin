@@ -9,6 +9,7 @@ import Roles from './components/roles/Roles.vue'
 import Cate from './components/goods/cate.vue'
 import Params from './components/params/Params.vue'
 import OrderList from './components/orderList/OrderList.vue'
+import GoodsList from './components/goods/goodsList.vue'
 
 Vue.use(Router)
 
@@ -57,6 +58,14 @@ const router = new Router({
         {
           path: '/orders',
           component: OrderList
+        }, 
+        {
+          path: '/goods/list',
+          component: GoodsList
+        },
+        {
+          path:'/goods',
+          redirect:'/goods/list'
         }
       ]
     }
