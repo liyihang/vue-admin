@@ -15,7 +15,7 @@
           </el-input>
         </el-col>
         <el-col :span="4">
-          <el-button type="primary">添加商品</el-button>
+          <el-button type="primary" @click="addGoods">添加商品</el-button>
         </el-col>
       </el-row>
       <!-- goods list -->
@@ -32,7 +32,7 @@
             <el-button type="primary" size="mini">
               <i class="el-icon-edit"></i>
             </el-button>
-            <el-button type="danger" size="mini">
+            <el-button type="danger" size="mini" @click="remove(scope.row.goods_id)">
               <i class="el-icon-delete"></i>
             </el-button>
           </template>
@@ -86,6 +86,27 @@ export default {
     handleCurrentChange(newpage){
       this.queryInfo.pagenum = newpage
       this.getGoodsList()
+    },
+    // delete goods
+    async remove(id){
+      const resConfirm = await this.$confirm('是否删除该商品, 是否继续?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).catch(err=>err)
+        if(resConfirm !=='confirm'){
+          return this.$message.error('已取消删除')
+        }
+        const {data:res} = await this.$http.delete('goods/'+id)
+        if(res.meta.status !== 200){
+          return this.$$message.error('删除失败')
+        }
+        this.$message.success('删除成功！！')
+        this.getGoodsList()
+    },
+    // add goods page
+    addGoods(){
+      this.$router.push('/goods/add')
     }
   },
 }
