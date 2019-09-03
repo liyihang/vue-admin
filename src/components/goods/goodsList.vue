@@ -10,8 +10,8 @@
     <el-card>
       <el-row :gutter="20">
         <el-col :span="8">
-          <el-input placeholder="请输入内容">
-            <el-button slot="append" icon="el-icon-search"></el-button>
+          <el-input placeholder="请输入内容"  v-model="queryInfo.query" clearable >
+            <el-button slot="append" icon="el-icon-search" @click="getGoodsList"></el-button>
           </el-input>
         </el-col>
         <el-col :span="4">
@@ -19,23 +19,35 @@
         </el-col>
       </el-row>
       <!-- goods list -->
-      <el-table :data="goodsList" border stripe >
+      <el-table :data="goodsList" border stripe>
         <el-table-column type="index"></el-table-column>
         <el-table-column label="商品名称" prop="goods_name"></el-table-column>
         <el-table-column label="商品价格" prop="goods_price"></el-table-column>
         <el-table-column label="商品重量" prop="goods_weight"></el-table-column>
         <el-table-column label="创建时间" prop="add_time">
-            <template slot-scope="scope">
-                {{scope.row.add_time|dateFormat}}
-            </template>
+          <template slot-scope="scope">{{scope.row.add_time|dateFormat}}</template>
         </el-table-column>
         <el-table-column>
-            <template slot-scope="scope">
-                  <el-button type="primary" size="mini"><i class="el-icon-edit"></i></el-button>  
-                  <el-button type="danger" size="mini"><i class="el-icon-delete"></i></el-button>  
-            </template>
+          <template slot-scope="scope">
+            <el-button type="primary" size="mini">
+              <i class="el-icon-edit"></i>
+            </el-button>
+            <el-button type="danger" size="mini">
+              <i class="el-icon-delete"></i>
+            </el-button>
+          </template>
         </el-table-column>
       </el-table>
+      <!-- pagination -->
+      <el-pagination
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+        :current-page="queryInfo.pagenum"
+        :page-sizes="[5, 10, 20, 30]"
+        :page-size="queryInfo.pagesize"
+        layout="total, sizes, prev, pager, next, jumper"
+        :total="total"
+      ></el-pagination>
     </el-card>
   </div>
 </template>
@@ -53,8 +65,8 @@ export default {
       total: 0
     }
   },
-  created() {
-      this.getGoodsList()
+  created () {
+    this.getGoodsList()
   },
   methods: {
     //   get GoodsList
@@ -65,6 +77,15 @@ export default {
       }
       this.goodsList = res.data.goods
       this.total = res.data.total
+    },
+    // handleSizeChange
+    handleSizeChange(newSize){
+      this.queryInfo.pagesize = newSize
+      this.getGoodsList()
+    },
+    handleCurrentChange(newpage){
+      this.queryInfo.pagenum = newpage
+      this.getGoodsList()
     }
   },
 }
