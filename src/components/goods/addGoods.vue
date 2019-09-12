@@ -50,22 +50,47 @@
             </el-form-item>
           </el-tab-pane>
           <el-tab-pane label="商品参数" name="1">
-           <el-form-item :label="item.attr_name" v-for="(item, index) in manyData" :key="index">
+            <el-form-item :label="item.attr_name" v-for="(item, index) in manyData" :key="index">
               <el-checkbox-group v-model="item.attr_vals">
-              <el-checkbox border  :label="val" v-for="(val, index) in item.attr_vals" :key="index"></el-checkbox>
-            </el-checkbox-group>
-           </el-form-item>
+                <el-checkbox
+                  border
+                  :label="val"
+                  v-for="(val, index) in item.attr_vals"
+                  :key="index"
+                ></el-checkbox>
+              </el-checkbox-group>
+            </el-form-item>
           </el-tab-pane>
-          <el-tab-pane label="商品属性" name="2">角色管理</el-tab-pane>
-          <el-tab-pane label="商品图片" name="3">定时任务补偿</el-tab-pane>
+          <el-tab-pane label="商品属性" name="2">
+            <el-form-item :label="item.attr_name" v-for="item in onlyData" :key="item.attr_id">
+              <el-input v-model="item.attr_vals"></el-input>
+            </el-form-item>
+          </el-tab-pane>
+          <el-tab-pane label="商品图片" name="3">
+            <el-upload
+              :action="uploadURL"
+              :headers="headerObj"
+              :on-preview="handlePreview"
+              :on-remove="handleRemove"
+              :on-success="handleSuccess"
+              list-type="picture"
+            >
+              <el-button size="small" type="primary">点击上传</el-button>
+            </el-upload>
+          </el-tab-pane>
           <el-tab-pane label="商品内容" name="4">定时任务补偿</el-tab-pane>
         </el-tabs>
       </el-form>
     </el-card>
+    <!-- dialog -->
+    <el-dialog title="提示" :visible.sync="previewDialog" width="50%">
+      <img :src="previewPath" />
+    </el-dialog>
   </div>
 </template>
 
 <script>
+import config from '../../config.json'
 export default {
   data () {
     return {
@@ -106,7 +131,14 @@ export default {
         ]
       },
       cateList: [],
-      manyData:[]
+      manyData: [],
+      onlyData: [],
+      uploadURL: config.baseURL + 'upload',
+      headerObj: {
+        Authorization: window.sessionStorage.getItem('token')
+      },
+      previewDialog: false,
+      previewPath: ''
     }
   },
   created () {
@@ -121,7 +153,6 @@ export default {
       this.cateList = res.data
     },
     handleChange () {
-      console.log(this.addForm.goods_cat)
       if (this.addForm.goods_cat.length === 3) {
 
       } else {
@@ -135,16 +166,37 @@ export default {
       }
     },
     async tabClick () {
-      if(this.activeName ==='1'){
-        const {data:res} = await this.$http.get(`categories/${this.catId}/attributes`,{params:{sel:'many'}})
-        if(res.meta.status!==200){
+      if (this.activeName === '1') {
+        const { data: res } = await this.$http.get(`categories/${this.catId}/attributes`, { params: { sel: 'many' } })
+        if (res.meta.status !== 200) {
           return this.$message.error('获取动态属性失败')
         }
-        res.data.forEach(item=>{
-          item.attr_vals = item.attr_vals.split('  ')
+        res.data.forEach(item => {
+          item.attr_vals = item.attr_vals ? item.attr_vals.split(' ') : []
         })
         this.manyData = res.data
-        console.log(res)
+      } else if (this.activeName === '2') {
+        const { data: res } = await this.$http.get(`categories/${this.catId}/attributes`, { params: { sel: 'only' } })
+        if (res.meta.status !== 200) {
+          return this.$message.error('获取动态属性失败')
+        }
+        this.onlyData = res.data
+      }
+    },
+    handlePreview (res) {
+      this.previewDialog = true
+      this.previewPath = res.response.data.url
+
+    },
+    handleRemove (res) {
+      const picPath = res.response.data.tmp_path
+      const i = this.addForm.pics.findIndex(x => x.pic === picPath)
+      this.addForm.pics.splice(i, 1)
+    },
+    handleSuccess (res) {
+      if (res.meta.status === 200) {
+        const pic = { pic: res.data.tmp_path }
+        this.addForm.pics.push(pic)
       }
     }
   },

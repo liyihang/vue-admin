@@ -8,11 +8,13 @@ import './assets/css/all.css'
 import TreeTable from 'vue-table-with-tree-grid'
 import NProgress from 'nprogress'
 import 'nprogress/nprogress.css'
+import config from './config.json'
+
 Vue.component('tree-table', TreeTable)
 Vue.config.productionTip = false
 Vue.use(ElementUI)
 Vue.prototype.$http = axios
-axios.defaults.baseURL = 'https://www.liulongbin.top:8888/api/private/v1'
+axios.defaults.baseURL = config.baseURL
 axios.interceptors.request.use(config => {
   config.headers.Authorization = window.sessionStorage.getItem('token')
   NProgress.start()
